@@ -1,0 +1,9 @@
+[package]
+name = "apaciter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dioxus = "0.7.3"
+reqwest = { version = "0.13.2", default-features = false, features = ["json"] }
+serde_json = "1.0.149"

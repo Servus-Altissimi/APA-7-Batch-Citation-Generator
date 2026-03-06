@@ -1,0 +1,30 @@
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: $font-mono;
+    font-size: 14px;
+    background: $color-bg;
+    color: $color-text;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: $color-accent;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+}
+
+code {
+    font-family: $font-mono;
+    font-size: 0.85em;
+    color: $color-accent;
+    background: $color-surface2;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid $color-border;
+}

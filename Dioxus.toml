@@ -1,0 +1,22 @@
+[application]
+name = "apagen"
+default_platform = "web"
+
+[web.app]
+title = "APA 7 Batch Citation Generator"
+base_path = ""
+
+[web.resource]
+
+
+[web.resource.dev]
+input = ["src/main.rs"]
+output = "dist"
+
+[web.resource.build]
+input = ["src/main.rs"]
+output = "dist"
+
+[bundle]
+identifier = "com.constringo.apagenerator"
+publisher = "Constringo"
