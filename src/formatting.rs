@@ -3,16 +3,102 @@ use crate::types::OutputFormat;
 
 // LaTeX helpers
 pub fn escape_latex(s: &str) -> String {
-    s.replace('\\', "\\textbackslash{}")
-        .replace('&',  "\\&")
-        .replace('%',  "\\%")
-        .replace('$',  "\\$")
-        .replace('#',  "\\#")
-        .replace('_',  "\\_")
-        .replace('{',  "\\{")
-        .replace('}',  "\\}")
-        .replace('~',  "\\textasciitilde{}")
-        .replace('^',  "\\textasciicircum{}")
+    normalize_latex_accents(
+        &s.replace('\\', "\\textbackslash{}")
+            .replace('&',  "\\&")
+            .replace('%',  "\\%")
+            .replace('$',  "\\$")
+            .replace('#',  "\\#")
+            .replace('_',  "\\_")
+            .replace('{',  "\\{")
+            .replace('}',  "\\}")
+            .replace('~',  "\\textasciitilde{}")
+            .replace('^',  "\\textasciicircum{}")
+    )
+}
+
+fn normalize_latex_accents(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            // Acute
+            'á' => out.push_str("\\'{a}"),
+            'é' => out.push_str("\\'{e}"),
+            'í' => out.push_str("\\'{i}"),
+            'ó' => out.push_str("\\'{o}"),
+            'ú' => out.push_str("\\'{u}"),
+            'ý' => out.push_str("\\'{y}"),
+            'Á' => out.push_str("\\'{A}"),
+            'É' => out.push_str("\\'{E}"),
+            'Í' => out.push_str("\\'{I}"),
+            'Ó' => out.push_str("\\'{O}"),
+            'Ú' => out.push_str("\\'{U}"),
+            'Ý' => out.push_str("\\'{Y}"),
+            // Grave
+            'à' => out.push_str("\\`{a}"),
+            'è' => out.push_str("\\`{e}"),
+            'ì' => out.push_str("\\`{i}"),
+            'ò' => out.push_str("\\`{o}"),
+            'ù' => out.push_str("\\`{u}"),
+            'À' => out.push_str("\\`{A}"),
+            'È' => out.push_str("\\`{E}"),
+            'Ì' => out.push_str("\\`{I}"),
+            'Ò' => out.push_str("\\`{O}"),
+            'Ù' => out.push_str("\\`{U}"),
+            // Circumflex
+            'â' => out.push_str("\\^{a}"),
+            'ê' => out.push_str("\\^{e}"),
+            'î' => out.push_str("\\^{i}"),
+            'ô' => out.push_str("\\^{o}"),
+            'û' => out.push_str("\\^{u}"),
+            'Â' => out.push_str("\\^{A}"),
+            'Ê' => out.push_str("\\^{E}"),
+            'Î' => out.push_str("\\^{I}"),
+            'Ô' => out.push_str("\\^{O}"),
+            'Û' => out.push_str("\\^{U}"),
+            // Tilde
+            'ã' => out.push_str("\\~{a}"),
+            'õ' => out.push_str("\\~{o}"),
+            'ñ' => out.push_str("\\~{n}"),
+            'Ã' => out.push_str("\\~{A}"),
+            'Õ' => out.push_str("\\~{O}"),
+            'Ñ' => out.push_str("\\~{N}"),
+            // Umlaut
+            'ä' => out.push_str("\\\"{a}"),
+            'ë' => out.push_str("\\\"{e}"),
+            'ï' => out.push_str("\\\"{i}"),
+            'ö' => out.push_str("\\\"{o}"),
+            'ü' => out.push_str("\\\"{u}"),
+            'ÿ' => out.push_str("\\\"{y}"),
+            'Ä' => out.push_str("\\\"{A}"),
+            'Ë' => out.push_str("\\\"{E}"),
+            'Ï' => out.push_str("\\\"{I}"),
+            'Ö' => out.push_str("\\\"{O}"),
+            'Ü' => out.push_str("\\\"{U}"),
+            // Tail
+            'ç' => out.push_str("\\c{c}"),
+            'Ç' => out.push_str("\\c{C}"),
+            // Ring above
+            'å' => out.push_str("\\r{a}"),
+            'Å' => out.push_str("\\r{A}"),
+            // Stroke / slash
+            'ø' => out.push_str("\\o{}"),
+            'Ø' => out.push_str("\\O{}"),
+            'ł' => out.push_str("\\l{}"),
+            'Ł' => out.push_str("\\L{}"),
+            // Ligatures
+            'æ' => out.push_str("\\ae{}"),
+            'Æ' => out.push_str("\\AE{}"),
+            'œ' => out.push_str("\\oe{}"),
+            'Œ' => out.push_str("\\OE{}"),
+            // Dotless i (Turkish)
+            'ı' => out.push_str("{\\i}"),
+            // Eszett
+            'ß' => out.push_str("\\ss{}"),
+            _ => out.push(c),
+        }
+    }
+    out
 }
 
 fn format_authors_latex(authors: &Value) -> String {
@@ -331,6 +417,7 @@ pub fn wrap_output(entries: &[String], fmt: OutputFormat) -> String {
         ),
     }
 }
+
 pub fn rerender(results: &[(String, Value)], fmt: OutputFormat) -> String {
     if results.is_empty() { return String::new(); }
     let entries: Vec<String> = results.iter()
