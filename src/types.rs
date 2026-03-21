@@ -38,4 +38,8 @@ impl OutputFormat {
     pub fn from_index(i: usize) -> Self {
         Self::all()[i.min(Self::all().len() - 1)]
     }
+
+    pub fn to_index(self) -> usize {
+        Self::all().iter().position(|&f| f == self).unwrap_or(0)
+    }
 }

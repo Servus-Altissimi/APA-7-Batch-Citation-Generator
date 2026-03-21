@@ -12,18 +12,22 @@
 
 #![allow(non_snake_case)]
 use dioxus::prelude::*;
-use dioxus::document::eval;
 use serde_json::Value;
 
 mod types;
 mod formatting;
 mod doi;
+mod history;
+mod components;
 
 use types::OutputFormat;
 use formatting::rerender;
 use doi::{resolve_to_doi, fetch_doi_metadata};
+use history::{HistoryEntry, now_info, save_history};
+use components::{AppHeader, AppFooter, OutputSec, HistorySec};
 
 const STYLE: Asset = asset!("/assets/style.scss");
+const MAX_HIST: usize = 200;
 
 fn main() {
     dioxus::launch(App);
@@ -41,6 +45,12 @@ fn App() -> Element {
     let mut hovered      = use_signal(|| false);
     let mut copied       = use_signal(|| false);
 
+    // history signals
+    let mut hist_open:    Signal<bool>              = use_signal(|| false);
+    let mut hist_entries: Signal<Vec<HistoryEntry>> = use_signal(Vec::new);
+    let mut hist_page:    Signal<usize>             = use_signal(|| 0);
+    let mut hist_loading: Signal<bool>              = use_signal(|| false);
+
     let generate = move |_| {
         let input      = doi_input.read().clone();
         let chosen_fmt = *fmt.read();
@@ -51,9 +61,9 @@ fn App() -> Element {
             results.set(Vec::new());
 
             let raw_lines: Vec<String> = input.lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .collect();
+            .map(|l| l.trim().to_string())
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect();
 
             if raw_lines.is_empty() {
                 status_lines.write().push("No entries found.".into());
@@ -64,7 +74,7 @@ fn App() -> Element {
             status_lines.write().push(format!(
                 "Found {} entr{}. Resolving DOIs…\n",
                 raw_lines.len(),
-                if raw_lines.len() == 1 { "y" } else { "ies" }
+                                              if raw_lines.len() == 1 { "y" } else { "ies" }
             ));
 
             let total = raw_lines.len();
@@ -76,14 +86,14 @@ fn App() -> Element {
 
                 let doi = match resolve_to_doi(line).await {
                     Ok(d) => d,
-                    Err(e) => {
-                        let mut s = status_lines.write();
-                        if let Some(last) = s.last_mut() {
-                            *last = format!("[{}/{}] {} NO DOI: {}", i+1, total, line, e);
-                        }
-                        failed += 1;
-                        continue;
-                    }
+              Err(e) => {
+                  let mut s = status_lines.write();
+                  if let Some(last) = s.last_mut() {
+                      *last = format!("[{}/{}] {} NO DOI: {}", i+1, total, line, e);
+                  }
+                  failed += 1;
+                  continue;
+              }
                 };
 
                 if doi != *line {
@@ -118,6 +128,29 @@ fn App() -> Element {
 
             status_lines.write().push(format!("\nDone. Success: {}  Failed: {}", success, failed));
             loading.set(false);
+
+            // Persist to history on any partial or full success
+            if success > 0 {
+                let (ts, date_str, time_str) = now_info().await;
+                let entry = HistoryEntry {
+                    id:           ts.to_string(),
+              timestamp_ms: ts,
+              date_str,
+              time_str,
+              doi_inputs:   raw_lines.clone(),
+              output:       output.read().clone(),
+              format_index: chosen_fmt.to_index(),
+                  success,
+              failed,
+                };
+                let snapshot: Vec<HistoryEntry> = {
+                    let mut h = hist_entries.write();
+                    h.insert(0, entry);
+                    h.truncate(MAX_HIST);
+                    h.clone()
+                };
+                save_history(&snapshot).await;
+            }
         });
     };
 
@@ -133,51 +166,16 @@ fn App() -> Element {
         }
     };
 
-    let on_copy = move |_| {
-        let text    = output.read().clone();
-        let is_html = *fmt.read() == OutputFormat::RichText;
-        let escaped = text.replace('\\', "\\\\").replace('`', "\\`").replace("${", "\\${");
-        spawn(async move {
-            let js = if is_html {
-                format!(
-                    "const b = new Blob([`{}`], {{type:'text/html'}});\
-                     await navigator.clipboard.write([new ClipboardItem({{'text/html':b}})]);",
-                    escaped
-                )
-            } else {
-                format!("await navigator.clipboard.writeText(`{}`);", escaped)
-            };
-            let _ = eval(&js).await;
-            copied.set(true);
-        });
-    };
-
-    let has_output = !output.read().is_empty();
-
     rsx! {
-    	document::Link {
-        	rel: "icon",
-        	r#type: "image/svg+xml",
-        	href: asset!("/assets/icon.svg"),
-    	}
-    	
+        document::Link {
+            rel: "icon",
+            r#type: "image/svg+xml",
+            href: asset!("/assets/icon.svg"),
+        }
+
         document::Stylesheet { href: STYLE }
         div { class: "app",
-            header { class: "app-header",
-                h1 {
-                    span { class: "accent", "APA 7 " }
-                    "Batch Citation Generator"
-                }
-                p { class: "subtitle",
-                    "Paste DOIs or article URLs; one per line. Comments start with "
-                    code { "#" }
-                    ". Accepts bare DOIs as: "
-                    code { "doi:…" }
-                    " or "
-                    code { "https://doi.org/…" }
-                    " or plain. Journal links, for example: Springer, Wiley, are also supported."
-                }
-            }
+            AppHeader {}
 
             label { class: "field-label", "Input" }
             textarea {
@@ -199,7 +197,7 @@ fn App() -> Element {
                         option {
                             value: "{i}",
                             selected: *fmt.read() == f,
-                            { f.label() }
+                                                                 { f.label() }
                         }
                     })}
                 }
@@ -209,43 +207,20 @@ fn App() -> Element {
                 pre { { status_lines.read().join("\n") } }
             }
 
-            if has_output {
-                p { class: "label",
-                    "Output: "
-                    code { { fmt.read().extension() } }
-                }
-                div {
-                    class: "output-wrap",
-                    onmouseenter: move |_| hovered.set(true),
-                    onmouseleave: move |_| { hovered.set(false); copied.set(false); },
-                    textarea {
-                        class: "output-area",
-                        rows: "18",
-                        readonly: true,
-                        value: "{output}",
-                    }
-                    button {
-                        class: if *copied.read() { "copy-btn copied" } else { "copy-btn" },
-                        onclick: on_copy,
-                        if *copied.read() { "Copied" } else { "Copy" }
-                    }
-                }
-            }
+            OutputSec { output, fmt, hovered, copied }
         }
 
-        footer { class: "app-footer",
-            p {
-                "A tool by "
-                a { href: "https://constringo.com", target: "_blank", rel: "noopener noreferrer",
-                    "constringo, "
-                }
-                "automating academic and research workflows."
-            }
-            p {
-                "Questions or feedback? "
-                a { href: "mailto:contact@constringo.com", "contact@constringo.com" }
-            }
-            p { class: "footer-copy", "© 2026 Constringo. All rights reserved." }
+        HistorySec {
+            hist_open,
+            hist_entries,
+            hist_page,
+            hist_loading,
+            output,
+            doi_input,
+            fmt,
+            copied,
         }
+
+        AppFooter {}
     }
 }
