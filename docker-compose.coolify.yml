@@ -1,0 +1,9 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        HEAD_SNIPPET_B64: ${HEAD_SNIPPET_B64:-}
+    expose:
+      - "8080"
+    restart: unless-stopped
