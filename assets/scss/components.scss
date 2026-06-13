@@ -72,3 +72,153 @@ pre {
     }
 }
 
+.history-section {
+    margin-top: $gap;
+}
+
+.history-toggle {
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: $gap-sm 0;
+    font-family: $font-mono;
+    font-size: 12.5px;
+    color: $color-muted;
+    cursor: pointer;
+    transition: color $transition;
+
+    &:hover:not(:disabled) {
+        background: none;
+        color: $color-accent;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    &--open { color: $color-text; }
+}
+
+.history-badge {
+    margin-left: 6px;
+    font-size: 11px;
+    color: $color-muted2;
+}
+
+.history-panel { margin-top: $gap-sm; }
+
+.history-panel__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.history-panel__title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: $color-muted2;
+}
+
+.history-clear-btn,
+.history-restore-btn,
+.history-delete-btn,
+.history-page-btn {
+    font-family: $font-mono;
+    font-size: 11px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    color: $color-muted;
+    cursor: pointer;
+    transition: color $transition;
+
+    &:hover:not(:disabled) {
+        background: none;
+        color: $color-accent;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    &:disabled { opacity: 0.35; cursor: default; }
+}
+
+.history-delete-btn:hover:not(:disabled) { color: $color-err; }
+
+.history-loading,
+.history-empty {
+    font-size: 12px;
+    color: $color-muted2;
+    padding: $gap-sm 0;
+}
+
+.history-groups {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+}
+
+.history-date-label {
+    font-size: 11px;
+    color: $color-muted2;
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+
+.history-entry {
+    padding: $gap-sm 0;
+    border-top: 1px solid $color-border;
+}
+
+.history-entry__meta {
+    display: flex;
+    align-items: center;
+    gap: $gap-sm;
+    flex-wrap: wrap;
+}
+
+.history-entry__time {
+    font-family: $font-mono;
+    font-size: 11px;
+    color: $color-muted;
+}
+
+.history-entry__fmt-badge {
+    font-size: 10.5px;
+    color: $color-muted2;
+}
+
+.history-entry__counts {
+    font-size: 11px;
+    color: $color-muted2;
+
+    &--warn { color: $color-err; }
+}
+
+.history-entry__preview {
+    font-family: $font-mono;
+    font-size: 11.5px;
+    color: $color-muted;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 4px 0;
+}
+
+.history-entry__actions {
+    display: flex;
+    gap: $gap;
+}
+
+.history-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $gap;
+    margin-top: $gap;
+}
+
+.history-page-info {
+    font-size: 11px;
+    color: $color-muted;
+}
+
