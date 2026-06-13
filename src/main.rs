@@ -208,17 +208,17 @@ fn App() -> Element {
             }
 
             OutputSec { output, fmt, hovered, copied }
-        }
 
-        HistorySec {
-            hist_open,
-            hist_entries,
-            hist_page,
-            hist_loading,
-            output,
-            doi_input,
-            fmt,
-            copied,
+            HistorySec {
+                hist_open,
+                hist_entries,
+                hist_page,
+                hist_loading,
+                output,
+                doi_input,
+                fmt,
+                copied,
+            }
         }
 
         AppFooter {}
